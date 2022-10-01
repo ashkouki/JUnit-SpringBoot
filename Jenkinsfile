@@ -1,25 +1,32 @@
 pipeline {
-    agent any
+    agent {
+        label "master"
+    }
     tools {
-        maven 'maven'
+        maven "Maven"
+    }
+    environment {
+        NEXUS_VERSION = "nexus3"
+        NEXUS_PROTOCOL = "http"
+        NEXUS_URL = "you-ip-addr-here:8081"
+        NEXUS_REPOSITORY = "maven-nexus-repo"
+        NEXUS_CREDENTIAL_ID = "nexus-user-credentials"
     }
     stages {
-        stage('Build') {
+        stage("Clone code from VCS") {
             steps {
-                bat 'mvn clean install'
-            }
-        }
-        stage('Testing'){
-            steps{
-                //sonarqube
-                bat 'mvn test'
-            }
-        }
-        stage("Build docker image"){
-            steps{
-                script{
-                    bat "docker build -t lexicography ."
+                script {
+                    git 'https://github.com/javaee/cargotracker.git';
                 }
+            }
+        }
+        stage("Maven Build") {
+            steps {
+                script {
+                    sh "mvn package -DskipTests=true"
+                }
+            }
+        }
         stage("Publish to Nexus Repository Manager") {
             steps {
                 script {
@@ -52,7 +59,8 @@ pipeline {
                     } else {
                         error "*** File: ${artifactPath}, could not be found";
                     }
+                }
             }
-         }
+        }
     }
 }
